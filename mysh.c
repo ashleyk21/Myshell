@@ -6,11 +6,14 @@
 #include <string.h>
 #include <errno.h>
 
-#define MAX_COMMAND_LENGTH 1024
+#define MAX_LINE_LENGTH 1024
 #define MAX_ARGUMENTS 32
-#define MAX_PATH_LENGTH 256
+#define MAX_TOKENS 64
+#define MAX_PATH_LENGTH 4096
 #define INPUT_END 1
 #define OUTPUT_END 0
+
+int execute_command(char *tokens[]);
 
 char current_directory[MAX_PATH_LENGTH];
 
@@ -40,12 +43,21 @@ void parse_command(char* command, char** arguments) {
     arguments[i] = NULL;
 }
 
+
+void change_directory(char* path) {
+    if (chdir(path) == -1) {
+        perror("chdir() error");
+    }
+}
+
 int execute_command(char** arguments) {
     pid_t pid;
     int fd[2];
     int status;
 
+    pipe(fd); /* create a pipe */
     pid = fork();
+
     if (pid == 0) {
         // child process
        dup2(fd[OUTPUT_END], STDIN_FILENO);
@@ -65,17 +77,13 @@ int execute_command(char** arguments) {
     }
 }
 
-void change_directory(char* path) {
-    if (chdir(path) == -1) {
-        perror("chdir() error");
-    }
-}
+
 
 int main(int argc, char *argv[]) {
     FILE *input_file;
-    char line[MAX_COMMAND_LENGTH];
-    char command[MAX_COMMAND_LENGTH];
-    char *tokens[MAX_ARGUMENTS];
+    char line[MAX_LINE_LENGTH];
+    char command[MAX_LINE_LENGTH];
+    char *tokens[MAX_TOKENS];
     int num_tokens;
     int status = 0;
 
@@ -90,10 +98,10 @@ int main(int argc, char *argv[]) {
             perror("fopen");
             exit(1);
         }
-        while (fgets(line, MAX_COMMAND_LENGTH, input_file) != NULL) {
+        while (fgets(line, MAX_LINE_LENGTH, input_file) != NULL) {
             num_tokens = 0;
             tokens[num_tokens] = strtok(line, " \t\n");
-            while (tokens[num_tokens] != NULL && num_tokens < MAX_ARGUMENTS-1) {
+            while (tokens[num_tokens] != NULL && num_tokens < MAX_TOKENS-1) {
                 num_tokens++;
                 tokens[num_tokens] = strtok(NULL, " \t\n");
             }
@@ -108,12 +116,12 @@ int main(int argc, char *argv[]) {
         printf("Welcome to my shell!\n");
         while (1) {
             print_prompt(status);
-            if (fgets(line, MAX_COMMAND_LENGTH, stdin) == NULL) {
+            if (fgets(line, MAX_LINE_LENGTH, stdin) == NULL) {
                 printf("\n");
                 break;
             }
 
-               // remove newline character
+        // remove newline character
         command[strcspn(command, "\n")] = '\0';
 
         // handle built-in commands
@@ -122,9 +130,10 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(command, "cd") == 0) {
             change_directory(getenv("HOME")); // change to home directory
         }
+            
             num_tokens = 0;
             tokens[num_tokens] = strtok(line, " \t\n");
-            while (tokens[num_tokens] != NULL && num_tokens < MAX_ARGUMENTS-1) {
+            while (tokens[num_tokens] != NULL && num_tokens < MAX_TOKENS-1) {
                 num_tokens++;
                 tokens[num_tokens] = strtok(NULL, " \t\n");
             }
@@ -137,5 +146,5 @@ int main(int argc, char *argv[]) {
         printf("mysh: exiting\n");
     }
 
-     return 0;
+    return 0;
 }
