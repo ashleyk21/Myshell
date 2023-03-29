@@ -42,7 +42,79 @@ void parse_command(char* command, char** arguments) {
     }
     arguments[i] = NULL;
 }
+// Checks if wildcards are present (0 wildcards, -1 no wildcards)
+int wildcardCheck(Command* myCommand, char currentDir[]) {
 
+	// If the * symbol is present in the command
+    if (myCommand->args[0][0] == '*') {
+        printf("Cannot use wildcard in the command.\n");
+        return -1;
+    }
+
+	// Loop that checks if each argument has the wildcard symbol and acts accordingly
+    int i;
+    for (i = 1; i <= myCommand->numOfArgs; i++) {
+
+		// If the argument contains a wildcard, the argument is substituded with all the possible combinations
+        if (myCommand->args[i][0] == '*') {
+            char wildcard[strlen(myCommand->args[i])];
+            strcpy(wildcard, (myCommand->args[i]) + 1); // +1 excludes wildcard (*)
+            regex_t regex;
+            regcomp(&regex, strcat(wildcard, "$"), 0); // Regexp example: "g.txt$"
+
+			// Open current directory and get all entities
+            struct dirent *ent;
+            DIR *dir = opendir(currentDir);
+            char *arg;
+			// Checks if there are more files to be processed for matching
+            while ((ent = readdir(dir)) != NULL) {
+				// If the entity filename matches the regular expression
+                if (regexec(&regex, ent->d_name, 0, NULL, 0) == 0) {
+                    arg = (char*) malloc(strlen(ent->d_name) + 1);
+                    strcpy(arg, ent->d_name);
+					// Substitutes the argument containing the wildcard with the new filename
+                    myCommand->args[i] = arg;
+                    // We only substitute one filename in this loop and add the rest later, hence break
+					break;
+                }
+            }
+
+			// If no matching filename was found
+            if (ent == NULL) {
+                int j = i;
+                while (j <= myCommand->numOfArgs) {
+                    // Remove the wildcard argument and move the rest of the arguments one position backwards
+                    myCommand->args[j] = myCommand->args[j + 1];
+                    j++;
+                }
+                (myCommand->numOfArgs)--;
+                i--;
+                continue; // Next instruction
+            }
+
+			// Continue checking for matching filenames and store them in empty args[] slots (still max 4 args)
+            while ((ent = readdir(dir)) != NULL) {
+                if (regexec(&regex, ent->d_name, 0, NULL, 0) == 0) {
+                    if (myCommand->numOfArgs < 4) {
+                        (myCommand->numOfArgs)++;
+                        arg = (char*) malloc(strlen(ent->d_name) + 1);
+                        strcpy(arg, ent->d_name);
+                        myCommand->args[myCommand->numOfArgs] = arg;
+                        myCommand->args[myCommand->numOfArgs + 1] = NULL;
+                    } else {
+                        printf("Too many arguments given.(4 max)\n");
+                        closedir(dir);
+                        regfree(&regex);
+                        return -1;
+                    }
+                }
+            }
+            closedir(dir);
+            regfree(&regex);
+        }
+    }
+    return 0;
+}
 
 void change_directory(char* path) {
     if (chdir(path) == -1) {
