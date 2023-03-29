@@ -1,0 +1,7 @@
+Test commands
+1)  ls -l
+2)  head -10 data.txt
+3)  head -1000 data.txt > newdata.txt
+4)  cut -f 1 newdata.txt
+5)  sort -k 1 newdata.txt>sort.txt | head -10 sort.txt
+6)  head -1000 sort.txt ; head -1000 mydata.txt

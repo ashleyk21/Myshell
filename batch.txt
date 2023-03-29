@@ -1,0 +1,6 @@
+ls -l
+sort -k 1 data.txt
+ls -l; ls -la;ls -l
+;ls-l;;
+cut -f 1 data.txt |ls -l;ls -la
+sort -k 1 data.txt;tail -10000 data.txt
