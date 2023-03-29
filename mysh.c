@@ -5,6 +5,8 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
+#include <regex.h>
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_ARGUMENTS 32
@@ -12,6 +14,18 @@
 #define MAX_PATH_LENGTH 4096
 #define INPUT_END 1
 #define OUTPUT_END 0
+
+// A type definition "Command" which contains the command
+typedef struct {
+	// args[0] represents the actual command
+	// args[1-4] represent the arguments (max 4 args)
+    // args[5] always NULL
+    char *args[6];
+
+	// TRUE if the process is background, FALSE otherwise
+    int isBackground;
+    int numOfArgs;
+} Command;
 
 int execute_command(char *tokens[]);
 
@@ -42,6 +56,7 @@ void parse_command(char* command, char** arguments) {
     }
     arguments[i] = NULL;
 }
+
 // Checks if wildcards are present (0 wildcards, -1 no wildcards)
 int wildcardCheck(Command* myCommand, char currentDir[]) {
 
@@ -115,6 +130,7 @@ int wildcardCheck(Command* myCommand, char currentDir[]) {
     }
     return 0;
 }
+
 
 void change_directory(char* path) {
     if (chdir(path) == -1) {
