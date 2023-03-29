@@ -2,4 +2,4 @@
 Ashley Kurnit: ank103
 Zachary Goldring: ztg8
 
-Unsure if test cases are correct, will return and edit this later
+Our mysh implemented the directory wildcards and the home directory extensions from section 3 of the requirements.
