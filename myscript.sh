@@ -1,9 +1,9 @@
 echo Welcome
-cd subdir
+cd textFile
 echo hello
-cd subdir
+cd textFile
 echo hello
-cd subdirsubdir
+cd textFiletextFile
 pwd
 cd directary_that_doesnt_exist
 cd
